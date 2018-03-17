@@ -1,0 +1,144 @@
+import requests
+from bs4 import BeautifulSoup as bs
+#план
+#Вывести список противников с которыми играла команда --- DONE
+#Подсчитать количество побед поражений ничьих --- DONE
+#разделить это на весенний этап и осенний --- Useless
+#посчитать счета --- DONE
+def get_html(url):
+    r=requests.get(url)
+    return r.text
+def all_teams(html):
+    b=0
+    l=[]
+    soup=bs(html,'lxml')
+    a=soup.find_all('div',class_='hide-field')
+    for i in a:
+        b+=1
+        if b%2==0:
+            try:l.append(i.find('a').get('title'))
+            except:l.append('Unknown team')
+    return l
+
+def counts(html):
+    k=0
+    l1=[]
+    soup=bs(html,'lxml')
+    c=soup.find_all('a',class_='score')
+    for i in c:
+        k+=1
+        if i.get_text().strip()=='превью':
+            d=soup.find_all('td',class_='name-td alLeft bordR')
+            
+            l1.append(d[k].get_text().strip())
+        else:
+            l1.append(i.get_text().strip())
+    return l1
+
+def place(html):
+    l2=[]
+    soup=bs(html,'lxml')
+    for i in soup.find_all('td',class_='alRight padR20'):
+        if i.get_text().strip()=='':continue
+        else:l2.append(i.get_text().strip())
+    return l2
+
+def teamname(html):
+    soup=bs(html,'lxml')
+    name=soup.find('h1',class_='titleH1').get_text().strip().split()[0]
+    return name
+
+def teamsresult(html):
+    win=0
+    draw=0
+    defeat=0
+    for i in range(len(listt)):
+        if len(listt[i])==5:
+            if listttt[i]=='Дома':
+                if listt[i][0]<listt[i][-1]:defeat+=1
+                elif listt[i][0]==listt[i][-1]:draw+=1
+                elif listt[i][0]>listt[i][-1]:win+=1
+            else:
+                if listt[i][0]<listt[i][-1]:win+=1
+                elif listt[i][0]==listt[i][-1]:draw+=1
+                elif listt[i][0]>listt[i][-1]:defeat+=1
+    print('побед:', win,'\nничьих: ',draw,'\nпоражений: ',defeat)
+
+def officialresult(html):
+    win=0
+    draw=0
+    defeat=0
+    for i in range(len(listt)):
+        if "Товарищеские" not in tournament(get_html(url))[i]:
+            if len(listt[i])==5:
+                if listttt[i]=='Дома':
+                    if listt[i][0]<listt[i][-1]:defeat+=1
+                    elif listt[i][0]==listt[i][-1]:draw+=1
+                    elif listt[i][0]>listt[i][-1]:win+=1
+                else:
+                    if listt[i][0]<listt[i][-1]:win+=1
+                    elif listt[i][0]==listt[i][-1]:draw+=1
+                    elif listt[i][0]>listt[i][-1]:defeat+=1
+    return win,draw,defeat
+
+def all_results():
+    for i in range(len(listt)):
+        if listttt[i]=='Дома':print(name+' '+listt[i]+' '+listtt[i])
+        else:print(listtt[i]+' '+listt[i]+' '+name)
+
+def tournament(html):
+    k=0
+    tourlist=[]
+    officialgames=[]
+    soup=bs(html,'lxml')
+    for i in soup.find_all('div',class_='hide-field'):
+        if k%2==0:
+            tourlist.append(i.find('a').get('title'))
+        k+=1
+    for i in tourlist:
+        if 'Товарищеские' not in i:
+            officialgames.append(i)
+
+    return tourlist
+def data(html):
+    soup=bs(html,'lxml')
+    a=soup.find_all('td',class_='name-td alLeft bordR')
+    years=[]
+    for i in range(1,len(a)):
+        years.append(a[i].get_text().strip().split('|')[0][6:10])
+    return years
+
+def counts_summary(html):
+    goals_for=0
+    goals_against=0
+    for count in range(len(listt)):
+        if 'Товарищеские' not in tournament1[count]:
+            if len(counts(get_html(url))[count])<7:
+                if listttt[count]=="Дома":
+                    goals_for+=int(listt[count][0])
+                    goals_against+=int(listt[count][-1])
+                else:
+                    goals_for+=int(listt[count][-1])
+                    goals_against+=int(listt[count][0])
+    return goals_for,goals_against
+#url меняется в зависимости от команды
+url='https://www.sports.ru/arsenal/calendar/?s=5540'
+listt=counts(get_html(url))
+listtt=all_teams(get_html(url))
+listttt=place(get_html(url))
+name=teamname(get_html(url))
+tournament1=tournament(get_html(url))
+#teamsresult(get_html(url))
+#all_results()
+#print(tournament(get_html(url)))
+#officialresult(get_html(url))
+#print(data(get_html(url)))
+#print(counts(get_html(url)))
+#counts_summary(get_html(url))
+#b=officialresult(get_html(url))
+c=counts_summary(get_html(url))
+x=officialresult(get_html(url))
+print('Команда:',name,'\nРезультат',
+      'в официальных играх:\nпобед: ',x[0],'\nничьих: ',x[1],
+      '\nпоражений: ',x[2],
+      '\nС общим счетом:',c[0],':',c[1])
